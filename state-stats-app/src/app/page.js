@@ -7,6 +7,7 @@ import Slideshow from '@/components/Slideshow';
 import Population from '@/components/Population';
 import Quiz from '@/components/Quiz';
 import ConfettiOnClick from '@/components/ConfettiOnClick';
+import HelpModal from '@/components/HelpModal';
 
 const TABS = [
   { id: 'slideshow', label: 'Slideshow', icon: '🎬' },
@@ -18,6 +19,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('slideshow');
   const [states, setStates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     async function fetchStates() {
@@ -49,6 +51,7 @@ export default function Home() {
   return (
     <>
       <ConfettiOnClick />
+      <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
 
       {/* Header */}
       <header className="header">
@@ -56,7 +59,16 @@ export default function Home() {
           <div className="logo-section">
             <img src="/logo.png" alt="State Stats" className="logo-img" />
             <div className="logo-text">
-              STATE STATS
+              <div className="logo-title-row">
+                STATE STATS
+                <button 
+                  className="help-trigger" 
+                  onClick={() => setShowHelp(true)}
+                  title="How to use"
+                >
+                  <span className="help-icon">💡</span>
+                </button>
+              </div>
               <span>Explore all 50 U.S. States</span>
             </div>
           </div>
@@ -98,9 +110,50 @@ export default function Home() {
       <footer className="footer">
         <p>🇺🇸 State Stats — Learn something new about America every day</p>
         <p style={{ marginTop: '4px', opacity: 0.6 }}>
-          Data sourced from U.S. Census Bureau & public records • Built with Next.js
+          Data sourced from U.S. Census Bureau & public records • Made with ❤️ and ☕
         </p>
       </footer>
+
+      <style jsx>{`
+        .logo-title-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .help-trigger {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 1px solid var(--glass-border);
+          background: rgba(255, 255, 255, 0.05);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          padding: 0;
+          color: inherit;
+        }
+
+        .help-trigger:hover {
+          background: rgba(37, 99, 235, 0.2);
+          border-color: var(--blue-glow);
+          transform: scale(1.1) rotate(15deg);
+          box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .help-trigger .help-icon {
+          font-size: 14px;
+          line-height: 1;
+        }
+
+        @media (max-width: 768px) {
+          .logo-title-row {
+            justify-content: center;
+          }
+        }
+      `}</style>
     </>
   );
 }
