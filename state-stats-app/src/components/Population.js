@@ -109,7 +109,10 @@ export default function Population({ states, cities = [] }) {
                 />
 
                 <div className="pop-info">
-                  <div className="pop-name">{city.name}</div>
+                  <div className="pop-name">
+                    {city.name}
+                    <span className="pop-famous">• {city.famous_for}</span>
+                  </div>
                   <div className="pop-bar-wrapper">
                     <div
                       className="pop-bar"

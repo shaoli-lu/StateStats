@@ -625,8 +625,18 @@ input:checked + .toggle-slider:before {
 }
 
 .city-row .pop-name {
-  font-weight: 500;
-  color: var(--gray-300);
+  font-weight: 600;
+  color: var(--gray-200);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pop-famous {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--gray-500);
+  font-style: italic;
 }
 
 .city-row .pop-number {
