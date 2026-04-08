@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { allStates } from '@/data';
+import { allStates, allCities } from '@/data';
 import Slideshow from '@/components/Slideshow';
 import Population from '@/components/Population';
 import Quiz from '@/components/Quiz';
@@ -18,34 +18,50 @@ const TABS = [
 export default function Home() {
   const [activeTab, setActiveTab] = useState('slideshow');
   const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    async function fetchStates() {
+    async function fetchData() {
       try {
-        // Try Supabase first
-        const { data, error } = await supabase
+        // Fetch states
+        const { data: statesData, error: statesError } = await supabase
           .from('states')
           .select('*')
           .order('name');
 
-        if (data && data.length > 0 && !error) {
-          setStates(data);
+        if (statesData && statesData.length > 0 && !statesError) {
+          setStates(statesData);
         } else {
-          // Fallback to local data
-          console.log('Using local data (Supabase not available or empty)');
           setStates(allStates);
         }
+
+        // Fetch cities
+        const { data: citiesData, error: citiesError } = await supabase
+          .from('cities')
+          .select('*, states(name)')
+          .order('population', { ascending: false });
+
+        if (citiesData && citiesData.length > 0 && !citiesError) {
+          const formattedCities = citiesData.map(c => ({
+            ...c,
+            state: c.states?.name || 'Unknown'
+          }));
+          setCities(formattedCities);
+        } else {
+          setCities(allCities);
+        }
       } catch (err) {
-        console.log('Using local data:', err.message);
+        console.log('Error fetching data:', err.message);
         setStates(allStates);
+        setCities(allCities);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchStates();
+    fetchData();
   }, []);
 
   return (
@@ -100,7 +116,7 @@ export default function Home() {
         ) : (
           <>
             {activeTab === 'slideshow' && <Slideshow states={states} />}
-            {activeTab === 'population' && <Population states={states} />}
+            {activeTab === 'population' && <Population states={states} cities={cities} />}
             {activeTab === 'quiz' && <Quiz states={states} />}
           </>
         )}

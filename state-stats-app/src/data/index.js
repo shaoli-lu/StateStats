@@ -3,6 +3,7 @@ import { statesHM } from './states-hm';
 import { statesMN } from './states-mn';
 import { statesNS } from './states-ns';
 import { statesTW } from './states-tw';
+import { allCities } from './cities';
 
 export const allStates = [
   ...statesAG,
@@ -12,4 +13,5 @@ export const allStates = [
   ...statesTW,
 ].sort((a, b) => a.name.localeCompare(b.name));
 
+export { allCities };
 export default allStates;

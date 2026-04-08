@@ -513,6 +513,78 @@ body::after {
 }
 
 /* ===== POPULATION TAB ===== */
+.pop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.pop-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+}
+
+.toggle-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--navy-mid);
+  transition: .4s;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--glass-border);
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--white);
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--blue);
+  border-color: var(--blue-light);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(22px);
+}
+
 .pop-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -531,6 +603,35 @@ body::after {
   transition: all var(--transition-base);
   cursor: pointer;
   animation: cardFadeIn 0.4s var(--ease-out) both;
+}
+
+.pop-row.city-row {
+  margin-left: var(--space-2xl);
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(15, 23, 42, 0.4);
+  font-size: 0.9rem;
+  border-style: dashed;
+}
+
+.city-row .pop-rank {
+  font-size: 1rem;
+  color: var(--gray-600);
+}
+
+.city-row .pop-flag {
+  width: 32px;
+  height: 22px;
+  opacity: 0.7;
+}
+
+.city-row .pop-name {
+  font-weight: 500;
+  color: var(--gray-300);
+}
+
+.city-row .pop-number {
+  font-size: 0.9rem;
+  color: var(--gray-400);
 }
 
 .pop-row:hover {
