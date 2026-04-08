@@ -7,12 +7,12 @@ export default function HelpModal({ isOpen, onClose }) {
     <div className="modal-overlay" onClick={onClose} aria-hidden={!isOpen}>
       <div className="modal-content help-modal-content" onClick={e => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Close help">&times;</button>
-        
+
         <div className="help-header">
           <span className="help-icon">💡</span>
           <h2>How to use State Stats</h2>
         </div>
-        
+
         <div className="help-body">
           <div className="help-item">
             <div className="help-item-icon">🎬</div>
@@ -21,15 +21,23 @@ export default function HelpModal({ isOpen, onClose }) {
               <p>Sit back and enjoy an automated tour of all 50 states. Use the controls to pause, skip, or jump to your favorite state.</p>
             </div>
           </div>
-          
+
           <div className="help-item">
             <div className="help-item-icon">📊</div>
             <div className="help-item-text">
               <h3>Data Deep Dive</h3>
-              <p>Explore current population rankings and density facts. See how your home state stacks up against the rest of the nation.</p>
+              <p>Explore population rankings. Use the <strong>City Toggle</strong> to see the largest cities and what they're famous for!</p>
             </div>
           </div>
-          
+
+          <div className="help-item">
+            <div className="help-item-icon">🏛️</div>
+            <div className="help-item-text">
+              <h3>State Insights</h3>
+              <p>Click on any state to reveal a detailed fact sheet. Discover its motto, statehood history, state flower/bird, and more!</p>
+            </div>
+          </div>
+
           <div className="help-item">
             <div className="help-item-icon">🎡</div>
             <div className="help-item-text">
@@ -37,7 +45,7 @@ export default function HelpModal({ isOpen, onClose }) {
               <p>Feeling smart? Spin the patriotic wheel to land on a random state and answer a trivia question about its unique facts.</p>
             </div>
           </div>
-          
+
           <div className="help-item featured">
             <div className="help-item-icon">🎉</div>
             <div className="help-item-text">
@@ -46,7 +54,7 @@ export default function HelpModal({ isOpen, onClose }) {
             </div>
           </div>
         </div>
-        
+
         <div className="help-footer">
           <button className="help-got-it" onClick={onClose}>Got it, let's explore!</button>
         </div>
