@@ -46,6 +46,14 @@ export default function HelpModal({ isOpen, onClose }) {
             </div>
           </div>
 
+          <div className="help-item">
+            <div className="help-item-icon">⛽</div>
+            <div className="help-item-text">
+              <h3>Live Gas Prices</h3>
+              <p>Check the Gas Price tab for a real-time scrolling banner of fuel costs across major cities and states. Sort the prices, drag to scroll, and explore the interactive EIA map.</p>
+            </div>
+          </div>
+
           <div className="help-item featured">
             <div className="help-item-icon">🎉</div>
             <div className="help-item-text">
