@@ -15,7 +15,7 @@ export async function GET() {
       const stats = fs.statSync(CACHE_FILE);
       if (Date.now() - stats.mtimeMs < CACHE_TTL_MS) {
         const cachedData = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
-        if (cachedData && typeof cachedData.oilPrice !== 'undefined') {
+        if (cachedData && typeof cachedData.oilAsOf !== 'undefined') {
           return NextResponse.json(cachedData);
         }
       }
@@ -69,6 +69,7 @@ export async function GET() {
             // Fetch crude oil trend (WTI Spot Price)
             let trend = 'flat';
             let oilPrice = 0;
+            let oilAsOf = '';
             try {
               const oilUrl = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[series][]=RWTC&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=2`;
               const oilRes = await fetch(oilUrl);
@@ -78,6 +79,7 @@ export async function GET() {
                   const latestOil = parseFloat(oilData.response.data[0].value);
                   const prevOil = parseFloat(oilData.response.data[1].value);
                   oilPrice = latestOil;
+                  oilAsOf = oilData.response.data[0].period;
                   if (latestOil > prevOil) trend = 'up';
                   else if (latestOil < prevOil) trend = 'down';
                 }
@@ -91,7 +93,8 @@ export async function GET() {
               asOfDate,
               nextSurveyDate,
               trend,
-              oilPrice
+              oilPrice,
+              oilAsOf
             };
 
             // Write to cache for future requests
@@ -167,6 +170,7 @@ export async function GET() {
     asOfDate: lastMonday.toISOString().split('T')[0],
     nextSurveyDate: nextMonday.toISOString().split('T')[0],
     trend: 'flat',
-    oilPrice: 78.45
+    oilPrice: 78.45,
+    oilAsOf: lastMonday.toISOString().split('T')[0]
   });
 }

@@ -159,8 +159,9 @@ export default function GasPrice() {
                 <span className="date-value">{gasData.nextSurveyDate}</span>
               </div>
               
-              <div className="trend-info" title={`Crude Oil: $${gasData.oilPrice || 78.45}/barrel`}>
-                <span className="oil-price">WTI: ${gasData.oilPrice || 78.45}/barrel</span>
+              <div className="trend-info">
+                <span className="oil-price">West Texas Intermediate Crude: ${gasData.oilPrice || 78.45}/barrel</span>
+                <span className="oil-as-of">Updated {getDaysAgo(gasData.oilAsOf)}</span>
                 <span className="trend-icon">{getTrendIcon(gasData.trend).icon}</span>
                 <span className="trend-text" style={{ color: getTrendIcon(gasData.trend).color }}>
                   {getTrendIcon(gasData.trend).text}
@@ -288,9 +289,22 @@ export default function GasPrice() {
           font-weight: 700;
           color: var(--text-primary);
           margin-right: 4px;
+          font-size: 0.8rem;
         }
 
         .oil-price::after {
+          content: "";
+          margin-left: 0;
+        }
+
+        .oil-as-of {
+          font-size: 0.7rem;
+          opacity: 0.6;
+          margin-right: 8px;
+          white-space: nowrap;
+        }
+
+        .oil-as-of::after {
           content: "•";
           margin-left: 8px;
           opacity: 0.3;
@@ -300,6 +314,7 @@ export default function GasPrice() {
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.02em;
+          font-size: 0.75rem;
         }
 
         .date-label {
@@ -417,6 +432,11 @@ export default function GasPrice() {
             width: 100%;
             justify-content: center;
             padding: 8px 16px;
+            flex-wrap: wrap;
+            text-align: center;
+          }
+          .oil-price {
+            font-size: 0.75rem;
           }
           .gas-city {
             font-size: 1rem;
