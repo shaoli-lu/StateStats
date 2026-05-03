@@ -8,11 +8,13 @@ import Population from '@/components/Population';
 import Quiz from '@/components/Quiz';
 import ConfettiOnClick from '@/components/ConfettiOnClick';
 import HelpModal from '@/components/HelpModal';
+import GasPrice from '@/components/GasPrice';
 
 const TABS = [
   { id: 'slideshow', label: 'Slideshow', icon: '🎬' },
   { id: 'population', label: 'Population', icon: '📊' },
   { id: 'quiz', label: 'Quiz', icon: '🎡' },
+  { id: 'gasprice', label: 'Gas Price', icon: '⛽' },
 ];
 
 export default function Home() {
@@ -118,6 +120,7 @@ export default function Home() {
             {activeTab === 'slideshow' && <Slideshow states={states} />}
             {activeTab === 'population' && <Population states={states} cities={cities} />}
             {activeTab === 'quiz' && <Quiz states={states} />}
+            {activeTab === 'gasprice' && <GasPrice />}
           </>
         )}
       </main>
