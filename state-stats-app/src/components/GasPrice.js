@@ -1,22 +1,24 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 export default function GasPrice() {
-  const [prices, setPrices] = useState([]);
+  const [basePrices, setBasePrices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sortDirection, setSortDirection] = useState('desc'); // 'desc' or 'asc'
+
   const scrollRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
+  const [hasDragged, setHasDragged] = useState(false);
 
   useEffect(() => {
     fetch('/api/gas-prices')
       .then(res => res.json())
       .then(data => {
-        // Duplicate data to create a seamless infinite scroll effect
-        setPrices([...data, ...data, ...data]); 
+        setBasePrices(data);
         setLoading(false);
       })
       .catch(err => {
@@ -25,7 +27,19 @@ export default function GasPrice() {
       });
   }, []);
 
-  const [hasDragged, setHasDragged] = useState(false);
+  // Derive prices purely from state without useEffect
+  const prices = useMemo(() => {
+    if (basePrices.length === 0) return [];
+    
+    const sorted = [...basePrices].sort((a, b) => {
+      const pA = parseFloat(a.price);
+      const pB = parseFloat(b.price);
+      return sortDirection === 'desc' ? pB - pA : pA - pB;
+    });
+
+    // Duplicate data to create a seamless infinite scroll effect
+    return [...sorted, ...sorted, ...sorted];
+  }, [basePrices, sortDirection]);
 
   useEffect(() => {
     if (loading || isPaused || isDragging) return;
@@ -78,12 +92,29 @@ export default function GasPrice() {
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
+  const toggleSort = (e) => {
+    e.stopPropagation();
+    setSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
+    setIsPaused(true);
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = 0;
+    }
+  };
+
   return (
     <div className="gas-price-container">
       {/* Banner */}
       <div className="gas-banner">
-        <div 
-          className="marquee-container"
+        <div className="banner-controls">
+          <button 
+            className="sort-btn" 
+            onClick={toggleSort}
+            title={`Currently sorting ${sortDirection === 'desc' ? 'Highest to Lowest' : 'Lowest to Highest'}`}
+          >
+            {sortDirection === 'desc' ? '🔽 Highest First' : '🔼 Lowest First'}
+          </button>
+        </div>
+        <div className="marquee-container"
           ref={scrollRef}
           onPointerDown={handlePointerDown}
           onPointerLeave={handlePointerLeave}
@@ -103,9 +134,13 @@ export default function GasPrice() {
             </div>
           )}
         </div>
-        <div className="pause-indicator">
-          {isPaused ? '⏸ Paused' : '▶ Playing'} (Click to toggle, Drag to scroll)
-        </div>
+        <button 
+          className="pause-btn" 
+          onClick={(e) => { e.stopPropagation(); setIsPaused(!isPaused); }}
+          title={isPaused ? "Click to Play" : "Click to Pause"}
+        >
+          {isPaused ? '⏸ Paused' : '▶ Playing'}
+        </button>
       </div>
 
       {/* Iframe */}
@@ -138,6 +173,30 @@ export default function GasPrice() {
 
         .gas-banner:hover {
           background: rgba(37, 99, 235, 0.25);
+        }
+
+        .banner-controls {
+          position: absolute;
+          top: 8px;
+          right: 12px;
+          z-index: 10;
+        }
+
+        .sort-btn {
+          background: rgba(15, 23, 42, 0.8);
+          border: 1px solid var(--glass-border);
+          color: var(--text-secondary);
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .sort-btn:hover {
+          background: rgba(37, 99, 235, 0.3);
+          color: white;
+          border-color: var(--blue-glow);
         }
 
         .marquee-container {
@@ -186,14 +245,25 @@ export default function GasPrice() {
           text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
-        .pause-indicator {
+        .pause-btn {
           position: absolute;
-          bottom: 2px;
-          right: 8px;
-          font-size: 0.7rem;
+          bottom: 8px;
+          right: 12px;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid var(--glass-border);
           color: var(--text-secondary);
-          opacity: 0.6;
-          pointer-events: none;
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          cursor: pointer;
+          transition: all 0.2s;
+          z-index: 10;
+        }
+
+        .pause-btn:hover {
+          background: rgba(37, 99, 235, 0.3);
+          color: white;
+          border-color: var(--blue-glow);
         }
 
         .iframe-wrapper {

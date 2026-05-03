@@ -28,7 +28,7 @@ export async function GET() {
   if (apiKey) {
     try {
       // Use EIA API v2
-      const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[product][]=EPMR&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=100`;
+      const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[product][]=EPMR&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000`;
       
       const res = await fetch(url, { next: { revalidate: 3600 } });
       
@@ -39,12 +39,19 @@ export async function GET() {
           const latestPeriod = data.response.data[0].period;
           const currentData = data.response.data.filter(d => d.period === latestPeriod);
           
-          const formattedPrices = currentData.map(item => ({
-            city: item["area-name"] || item.area,
-            price: parseFloat(item.value).toFixed(2)
-          }))
-          .filter(item => item.city && !item.city.includes("U.S. All"))
-          .slice(0, 25);
+          const formattedPrices = currentData.map(item => {
+            return {
+              city: item["area-name"] || item.area || "",
+              price: parseFloat(item.value).toFixed(2)
+            };
+          })
+          // Filter out full US average and any PADD regions to focus on specific cities/states
+          .filter(item => 
+            item.city && 
+            !item.city.includes("U.S. All") && 
+            !item.city.includes("PADD") &&
+            !item.city.includes("Petroleum Administration")
+          );
           
           if (formattedPrices.length > 0) {
             // Write to cache for future requests
