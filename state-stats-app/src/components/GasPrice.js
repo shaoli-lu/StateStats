@@ -36,7 +36,7 @@ export default function GasPrice() {
   const prices = useMemo(() => {
     const basePrices = gasData.prices || [];
     if (basePrices.length === 0) return [];
-    
+
     const sorted = [...basePrices].sort((a, b) => {
       const pA = parseFloat(a.price);
       const pB = parseFloat(b.price);
@@ -49,12 +49,12 @@ export default function GasPrice() {
 
   useEffect(() => {
     if (loading || isPaused || isDragging) return;
-    
+
     let animationId;
     const scroll = () => {
       if (scrollRef.current) {
-        scrollRef.current.scrollLeft += 1.5; 
-        
+        scrollRef.current.scrollLeft += 1.5;
+
         const maxScroll = scrollRef.current.scrollWidth / 3;
         if (scrollRef.current.scrollLeft >= maxScroll * 2) {
           scrollRef.current.scrollLeft = maxScroll;
@@ -62,7 +62,7 @@ export default function GasPrice() {
       }
       animationId = requestAnimationFrame(scroll);
     };
-    
+
     animationId = requestAnimationFrame(scroll);
     return () => cancelAnimationFrame(animationId);
   }, [loading, isPaused, isDragging]);
@@ -94,7 +94,7 @@ export default function GasPrice() {
     if (Math.abs(x - startX) > 5) {
       setHasDragged(true);
     }
-    const walk = (x - startX) * 2; 
+    const walk = (x - startX) * 2;
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
@@ -132,22 +132,22 @@ export default function GasPrice() {
       <div className="gas-banner">
         <div className="banner-controls">
           <div className="left-controls">
-            <button 
-              className="control-btn pause-btn" 
+            <button
+              className="control-btn pause-btn"
               onClick={(e) => { e.stopPropagation(); setIsPaused(!isPaused); }}
               title={isPaused ? "Click to Play" : "Click to Pause"}
             >
               {isPaused ? '⏸ Paused' : '▶ Playing'}
             </button>
-            <button 
-              className="control-btn sort-btn" 
+            <button
+              className="control-btn sort-btn"
               onClick={toggleSort}
               title={`Currently sorting ${sortDirection === 'desc' ? 'Highest to Lowest' : 'Lowest to Highest'}`}
             >
               {sortDirection === 'desc' ? '🔽 Highest First' : '🔼 Lowest First'}
             </button>
           </div>
-          
+
           {!loading && gasData.asOfDate && (
             <div className="info-badges">
               <div className="date-info">
@@ -158,15 +158,21 @@ export default function GasPrice() {
                 <span className="date-label">Next Survey:</span>
                 <span className="date-value">{gasData.nextSurveyDate}</span>
               </div>
-              
-              <div className="trend-info">
-                <span className="oil-price">West Texas Intermediate Crude: ${gasData.oilPrice || 78.45}/barrel</span>
-                <span className="oil-as-of">Updated {getDaysAgo(gasData.oilAsOf)}</span>
-                <span className="trend-icon">{getTrendIcon(gasData.trend).icon}</span>
-                <span className="trend-text" style={{ color: getTrendIcon(gasData.trend).color }}>
-                  {getTrendIcon(gasData.trend).text}
-                </span>
-              </div>
+
+              {gasData.oilPrice > 0 && (
+                <div 
+                  className="trend-info" 
+                  title={`West Texas Intermediate (WTI) Crude Spot Price: $${gasData.oilPrice}/barrel. \nUpdated: ${gasData.oilAsOf}. \nTrend is determined by comparing the current week to the previous week's price from EIA official data.`}
+                >
+                  <span className="oil-label">WTI (West Texas Intermediate Crude):</span>
+                  <span className="oil-price-value">${gasData.oilPrice}/barrel</span>
+                  <span className="oil-as-of">Updated {getDaysAgo(gasData.oilAsOf)}</span>
+                  <span className="trend-icon">{getTrendIcon(gasData.trend).icon}</span>
+                  <span className="trend-text" style={{ color: getTrendIcon(gasData.trend).color }}>
+                    {getTrendIcon(gasData.trend).text}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -194,8 +200,8 @@ export default function GasPrice() {
 
       {/* Iframe */}
       <div className="iframe-wrapper">
-        <iframe 
-          src="https://www.eia.gov/petroleum/gasdiesel/gas_geographies.php#pricesbyregion" 
+        <iframe
+          src="https://www.eia.gov/petroleum/gasdiesel/gas_geographies.php#pricesbyregion"
           className="gas-iframe"
           title="Government Gas by Region"
         />
@@ -271,7 +277,7 @@ export default function GasPrice() {
           border-radius: 20px;
           border: 1px solid rgba(255, 255, 255, 0.05);
           font-size: 0.75rem;
-          cursor: help;
+          cursor: default;
           transition: all 0.2s;
         }
 
@@ -285,16 +291,15 @@ export default function GasPrice() {
           font-size: 0.9rem;
         }
 
-        .oil-price {
-          font-weight: 700;
-          color: var(--text-primary);
+        .oil-label {
+          opacity: 0.7;
           margin-right: 4px;
-          font-size: 0.8rem;
         }
 
-        .oil-price::after {
-          content: "";
-          margin-left: 0;
+        .oil-price-value {
+          font-weight: 700;
+          color: var(--text-primary);
+          margin-right: 8px;
         }
 
         .oil-as-of {
@@ -435,7 +440,7 @@ export default function GasPrice() {
             flex-wrap: wrap;
             text-align: center;
           }
-          .oil-price {
+          .oil-price-value {
             font-size: 0.75rem;
           }
           .gas-city {

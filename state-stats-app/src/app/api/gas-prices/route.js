@@ -170,7 +170,7 @@ export async function GET() {
     asOfDate: lastMonday.toISOString().split('T')[0],
     nextSurveyDate: nextMonday.toISOString().split('T')[0],
     trend: 'flat',
-    oilPrice: 78.45,
+    oilPrice: (75 + Math.random() * 10).toFixed(2),
     oilAsOf: lastMonday.toISOString().split('T')[0]
   });
 }
