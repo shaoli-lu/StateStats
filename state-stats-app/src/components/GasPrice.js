@@ -223,7 +223,7 @@ export default function GasPrice() {
           background: rgba(37, 99, 235, 0.15);
           border-bottom: 1px solid var(--glass-border);
           position: relative;
-          cursor: pointer;
+          cursor: default;
         }
 
         .gas-banner:hover {
@@ -248,6 +248,7 @@ export default function GasPrice() {
           display: flex;
           align-items: center;
           gap: 12px;
+          cursor: default;
         }
 
         .date-info {
@@ -260,6 +261,7 @@ export default function GasPrice() {
           border: 1px solid rgba(255, 255, 255, 0.05);
           font-size: 0.75rem;
           color: var(--text-secondary);
+          cursor: default;
         }
 
         .days-ago {
