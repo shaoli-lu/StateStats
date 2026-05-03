@@ -49,8 +49,8 @@ export default function HelpModal({ isOpen, onClose }) {
           <div className="help-item">
             <div className="help-item-icon">⛽</div>
             <div className="help-item-text">
-              <h3>Live Gas Prices</h3>
-              <p>Check the Gas Price tab for a real-time scrolling banner of fuel costs across major cities and states. Sort the prices, drag to scroll, and explore the interactive EIA map.</p>
+              <h3>Live Gas & Oil Trends</h3>
+              <p>Check fuel costs across the country. We've integrated <strong>West Texas Intermediate (WTI) Crude</strong> tracking and <strong>Market Trends</strong> to help predict price shifts. Look for 'As Of' dates and survey schedules to stay on top of the latest energy data.</p>
             </div>
           </div>
 
