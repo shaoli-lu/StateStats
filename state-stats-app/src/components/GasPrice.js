@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 export default function GasPrice() {
-  const [basePrices, setBasePrices] = useState([]);
+  const [gasData, setGasData] = useState({ prices: [], asOfDate: '', nextSurveyDate: '' });
   const [loading, setLoading] = useState(true);
   const [sortDirection, setSortDirection] = useState('desc'); // 'desc' or 'asc'
 
@@ -18,7 +18,12 @@ export default function GasPrice() {
     fetch('/api/gas-prices')
       .then(res => res.json())
       .then(data => {
-        setBasePrices(data);
+        // Handle both old array format and new object format for robustness
+        if (Array.isArray(data)) {
+          setGasData({ prices: data, asOfDate: '', nextSurveyDate: '' });
+        } else {
+          setGasData(data);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -29,6 +34,7 @@ export default function GasPrice() {
 
   // Derive prices purely from state without useEffect
   const prices = useMemo(() => {
+    const basePrices = gasData.prices || [];
     if (basePrices.length === 0) return [];
     
     const sorted = [...basePrices].sort((a, b) => {
@@ -39,7 +45,7 @@ export default function GasPrice() {
 
     // Duplicate data to create a seamless infinite scroll effect
     return [...sorted, ...sorted, ...sorted];
-  }, [basePrices, sortDirection]);
+  }, [gasData.prices, sortDirection]);
 
   useEffect(() => {
     if (loading || isPaused || isDragging) return;
@@ -101,25 +107,67 @@ export default function GasPrice() {
     }
   };
 
+  const getDaysAgo = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const today = new Date();
+    const diffTime = Math.abs(today - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return '(today)';
+    if (diffDays === 1) return '(yesterday)';
+    return `(${diffDays} days ago)`;
+  };
+
+  const getTrendIcon = (trend) => {
+    switch (trend) {
+      case 'up': return { icon: '📈', text: 'Trending Up', color: '#ef4444' }; // Red because up is bad for gas prices
+      case 'down': return { icon: '📉', text: 'Trending Down', color: '#10b981' }; // Green because down is good
+      default: return { icon: '⚖️', text: 'Market Steady', color: '#94a3b8' };
+    }
+  };
+
   return (
     <div className="gas-price-container">
       {/* Banner */}
       <div className="gas-banner">
         <div className="banner-controls">
-          <button 
-            className="control-btn pause-btn" 
-            onClick={(e) => { e.stopPropagation(); setIsPaused(!isPaused); }}
-            title={isPaused ? "Click to Play" : "Click to Pause"}
-          >
-            {isPaused ? '⏸ Paused' : '▶ Playing'}
-          </button>
-          <button 
-            className="control-btn sort-btn" 
-            onClick={toggleSort}
-            title={`Currently sorting ${sortDirection === 'desc' ? 'Highest to Lowest' : 'Lowest to Highest'}`}
-          >
-            {sortDirection === 'desc' ? '🔽 Highest First' : '🔼 Lowest First'}
-          </button>
+          <div className="left-controls">
+            <button 
+              className="control-btn pause-btn" 
+              onClick={(e) => { e.stopPropagation(); setIsPaused(!isPaused); }}
+              title={isPaused ? "Click to Play" : "Click to Pause"}
+            >
+              {isPaused ? '⏸ Paused' : '▶ Playing'}
+            </button>
+            <button 
+              className="control-btn sort-btn" 
+              onClick={toggleSort}
+              title={`Currently sorting ${sortDirection === 'desc' ? 'Highest to Lowest' : 'Lowest to Highest'}`}
+            >
+              {sortDirection === 'desc' ? '🔽 Highest First' : '🔼 Lowest First'}
+            </button>
+          </div>
+          
+          {!loading && gasData.asOfDate && (
+            <div className="info-badges">
+              <div className="date-info">
+                <span className="date-label">As of:</span>
+                <span className="date-value">{gasData.asOfDate}</span>
+                <span className="days-ago">{getDaysAgo(gasData.asOfDate)}</span>
+                <span className="date-separator">|</span>
+                <span className="date-label">Next Survey:</span>
+                <span className="date-value">{gasData.nextSurveyDate}</span>
+              </div>
+              
+              <div className="trend-info" title={`Crude Oil: $${gasData.oilPrice || 78.45}/barrel`}>
+                <span className="oil-price">WTI: ${gasData.oilPrice || 78.45}/barrel</span>
+                <span className="trend-icon">{getTrendIcon(gasData.trend).icon}</span>
+                <span className="trend-text" style={{ color: getTrendIcon(gasData.trend).color }}>
+                  {getTrendIcon(gasData.trend).text}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
         <div className="marquee-container"
           ref={scrollRef}
@@ -178,9 +226,97 @@ export default function GasPrice() {
         .banner-controls {
           display: flex;
           justify-content: space-between;
+          align-items: center;
           padding: 12px 16px 0 16px;
           position: relative;
           z-index: 10;
+        }
+
+        .left-controls {
+          display: flex;
+          gap: 8px;
+        }
+
+        .info-badges {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .date-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(15, 23, 42, 0.6);
+          padding: 6px 14px;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+        }
+
+        .days-ago {
+          font-size: 0.7rem;
+          opacity: 0.6;
+          margin-left: 2px;
+        }
+
+        .trend-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(15, 23, 42, 0.6);
+          padding: 6px 14px;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          font-size: 0.75rem;
+          cursor: help;
+          transition: all 0.2s;
+        }
+
+        .trend-info:hover {
+          background: rgba(15, 23, 42, 0.8);
+          border-color: rgba(255, 255, 255, 0.1);
+          transform: translateY(-1px);
+        }
+
+        .trend-icon {
+          font-size: 0.9rem;
+        }
+
+        .oil-price {
+          font-weight: 700;
+          color: var(--text-primary);
+          margin-right: 4px;
+        }
+
+        .oil-price::after {
+          content: "•";
+          margin-left: 8px;
+          opacity: 0.3;
+        }
+
+        .trend-text {
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+
+        .date-label {
+          font-weight: 400;
+          opacity: 0.8;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .date-value {
+          color: var(--blue-glow);
+          font-weight: 600;
+        }
+
+        .date-separator {
+          opacity: 0.3;
+          margin: 0 4px;
         }
 
         .control-btn {
@@ -266,6 +402,22 @@ export default function GasPrice() {
         }
 
         @media (max-width: 768px) {
+          .banner-controls {
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+            padding: 16px;
+          }
+          .info-badges {
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+          }
+          .date-info, .trend-info {
+            width: 100%;
+            justify-content: center;
+            padding: 8px 16px;
+          }
           .gas-city {
             font-size: 1rem;
           }

@@ -15,7 +15,7 @@ export async function GET() {
       const stats = fs.statSync(CACHE_FILE);
       if (Date.now() - stats.mtimeMs < CACHE_TTL_MS) {
         const cachedData = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
-        if (cachedData && cachedData.length > 0) {
+        if (cachedData && typeof cachedData.oilPrice !== 'undefined') {
           return NextResponse.json(cachedData);
         }
       }
@@ -54,13 +54,53 @@ export async function GET() {
           );
           
           if (formattedPrices.length > 0) {
+            const asOfDate = latestPeriod; // EIA period is typically YYYY-MM-DD
+            
+            // Calculate next survey date (usually weekly on Mondays)
+            let nextSurveyDate = "";
+            try {
+              const d = new Date(latestPeriod);
+              d.setDate(d.getDate() + 7);
+              nextSurveyDate = d.toISOString().split('T')[0];
+            } catch (e) {
+              console.error("Error calculating next survey date", e);
+            }
+
+            // Fetch crude oil trend (WTI Spot Price)
+            let trend = 'flat';
+            let oilPrice = 0;
+            try {
+              const oilUrl = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[series][]=RWTC&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=2`;
+              const oilRes = await fetch(oilUrl);
+              if (oilRes.ok) {
+                const oilData = await oilRes.json();
+                if (oilData?.response?.data?.length >= 2) {
+                  const latestOil = parseFloat(oilData.response.data[0].value);
+                  const prevOil = parseFloat(oilData.response.data[1].value);
+                  oilPrice = latestOil;
+                  if (latestOil > prevOil) trend = 'up';
+                  else if (latestOil < prevOil) trend = 'down';
+                }
+              }
+            } catch (oilErr) {
+              console.error("Error fetching oil trend:", oilErr);
+            }
+
+            const responsePayload = {
+              prices: formattedPrices,
+              asOfDate,
+              nextSurveyDate,
+              trend,
+              oilPrice
+            };
+
             // Write to cache for future requests
             try {
-              fs.writeFileSync(CACHE_FILE, JSON.stringify(formattedPrices), 'utf8');
+              fs.writeFileSync(CACHE_FILE, JSON.stringify(responsePayload), 'utf8');
             } catch (writeErr) {
               console.error("Error writing gas prices cache:", writeErr);
             }
-            return NextResponse.json(formattedPrices);
+            return NextResponse.json(responsePayload);
           }
         }
       } else {
@@ -77,7 +117,7 @@ export async function GET() {
   try {
     if (fs.existsSync(CACHE_FILE)) {
       const staleCachedData = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
-      if (staleCachedData && staleCachedData.length > 0) {
+      if (staleCachedData) {
         console.warn("Using stale cache for gas prices as fallback.");
         return NextResponse.json(staleCachedData);
       }
@@ -115,5 +155,18 @@ export async function GET() {
     price: (item.price + (Math.random() * 0.1 - 0.05)).toFixed(2)
   }));
 
-  return NextResponse.json(updatedPrices);
+  // Mock dates for fallback
+  const today = new Date();
+  const lastMonday = new Date();
+  lastMonday.setDate(today.getDate() - (today.getDay() + 6) % 7);
+  const nextMonday = new Date(lastMonday);
+  nextMonday.setDate(lastMonday.getDate() + 7);
+
+  return NextResponse.json({
+    prices: updatedPrices,
+    asOfDate: lastMonday.toISOString().split('T')[0],
+    nextSurveyDate: nextMonday.toISOString().split('T')[0],
+    trend: 'flat',
+    oilPrice: 78.45
+  });
 }
