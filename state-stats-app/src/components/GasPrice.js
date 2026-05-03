@@ -107,7 +107,14 @@ export default function GasPrice() {
       <div className="gas-banner">
         <div className="banner-controls">
           <button 
-            className="sort-btn" 
+            className="control-btn pause-btn" 
+            onClick={(e) => { e.stopPropagation(); setIsPaused(!isPaused); }}
+            title={isPaused ? "Click to Play" : "Click to Pause"}
+          >
+            {isPaused ? '⏸ Paused' : '▶ Playing'}
+          </button>
+          <button 
+            className="control-btn sort-btn" 
             onClick={toggleSort}
             title={`Currently sorting ${sortDirection === 'desc' ? 'Highest to Lowest' : 'Lowest to Highest'}`}
           >
@@ -134,13 +141,6 @@ export default function GasPrice() {
             </div>
           )}
         </div>
-        <button 
-          className="pause-btn" 
-          onClick={(e) => { e.stopPropagation(); setIsPaused(!isPaused); }}
-          title={isPaused ? "Click to Play" : "Click to Pause"}
-        >
-          {isPaused ? '⏸ Paused' : '▶ Playing'}
-        </button>
       </div>
 
       {/* Iframe */}
@@ -176,24 +176,26 @@ export default function GasPrice() {
         }
 
         .banner-controls {
-          position: absolute;
-          top: 8px;
-          right: 12px;
+          display: flex;
+          justify-content: space-between;
+          padding: 12px 16px 0 16px;
+          position: relative;
           z-index: 10;
         }
 
-        .sort-btn {
+        .control-btn {
           background: rgba(15, 23, 42, 0.8);
           border: 1px solid var(--glass-border);
           color: var(--text-secondary);
-          padding: 4px 10px;
+          padding: 6px 12px;
           border-radius: 12px;
-          font-size: 0.75rem;
+          font-size: 0.8rem;
+          font-weight: 500;
           cursor: pointer;
           transition: all 0.2s;
         }
 
-        .sort-btn:hover {
+        .control-btn:hover {
           background: rgba(37, 99, 235, 0.3);
           color: white;
           border-color: var(--blue-glow);
@@ -243,27 +245,6 @@ export default function GasPrice() {
           font-weight: 700;
           font-size: 1.2rem;
           text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
-        }
-
-        .pause-btn {
-          position: absolute;
-          bottom: 8px;
-          right: 12px;
-          background: rgba(15, 23, 42, 0.9);
-          border: 1px solid var(--glass-border);
-          color: var(--text-secondary);
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-size: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          z-index: 10;
-        }
-
-        .pause-btn:hover {
-          background: rgba(37, 99, 235, 0.3);
-          color: white;
-          border-color: var(--blue-glow);
         }
 
         .iframe-wrapper {
