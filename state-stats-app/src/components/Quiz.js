@@ -112,6 +112,8 @@ export default function Quiz({ states }) {
     drawWheel(rotation);
   }, [rotation, drawWheel]);
 
+  const [seenQuestions, setSeenQuestions] = useState([]);
+
   // Spin the wheel!
   const spinWheel = () => {
     if (spinning || wheelStates.length === 0) return;
@@ -159,14 +161,32 @@ export default function Quiz({ states }) {
   };
 
   const generateQuestion = (state) => {
-    const category = QUIZ_CATEGORIES[Math.floor(Math.random() * QUIZ_CATEGORIES.length)];
+    // Try to find a category that hasn't been seen recently for this state
+    let availableCategories = shuffleArray([...QUIZ_CATEGORIES]);
+    let category = availableCategories[0];
+    
+    for (const cat of availableCategories) {
+      const questionId = `${state.name}-${cat.key}`;
+      if (!seenQuestions.includes(questionId)) {
+        category = cat;
+        break;
+      }
+    }
+
     const correctAnswer = category.getAnswer(state);
     
-    // Generate wrong answers from other states
-    const otherStates = states.filter(s => s.name !== state.name);
-    const wrongAnswers = shuffleArray(otherStates)
-      .slice(0, 3)
-      .map(s => category.getAnswer(s));
+    // Generate unique wrong answers from other states
+    // We must ensure that the wrong answers are NOT the same as the correct answer
+    // and are NOT duplicates of each other.
+    const potentialWrongAnswers = states
+      .filter(s => s.name !== state.name)
+      .map(s => category.getAnswer(s))
+      .filter(ans => ans !== correctAnswer);
+    
+    // Use a Set to get unique values
+    const uniqueWrongAnswers = [...new Set(potentialWrongAnswers)];
+    const shuffledDecoys = shuffleArray(uniqueWrongAnswers);
+    const wrongAnswers = shuffledDecoys.slice(0, 3);
 
     const options = shuffleArray([correctAnswer, ...wrongAnswers]);
 
@@ -174,6 +194,13 @@ export default function Quiz({ states }) {
       category: category.label,
       correctAnswer,
       options,
+    });
+
+    // Update history, keeping only the last 200
+    setSeenQuestions(prev => {
+      const questionId = `${state.name}-${category.key}`;
+      const newHistory = [questionId, ...prev.filter(id => id !== questionId)];
+      return newHistory.slice(0, 200);
     });
   };
 
