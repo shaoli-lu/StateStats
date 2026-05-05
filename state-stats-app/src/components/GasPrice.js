@@ -135,15 +135,26 @@ export default function GasPrice() {
   return (
     <div className="gas-price-container">
       {/* Explanation Banner for Stale Data */}
-      {!loading && gasData.isStale && (
+      {!loading && (gasData.isStale || gasData.isOilStale) && (
         <div className="stale-banner">
           <div className="stale-banner-content">
             <span className="stale-icon">🔔</span>
             <div className="stale-text-group">
-              <span className="stale-title">Update in Progress</span>
+              <span className="stale-title">
+                {gasData.isStale && gasData.isOilStale 
+                  ? 'Market Data Updates in Progress' 
+                  : gasData.isStale 
+                    ? 'Gas Price Update Pending' 
+                    : 'WTI Crude Price Delayed'}
+              </span>
               <span className="stale-description">
-                The EIA typically releases new weekly data on Monday afternoons. 
-                We are currently waiting for the <strong>{gasData.nextSurveyDate}</strong> release and will update automatically as soon as it's available.
+                {gasData.isStale && (
+                  <>The EIA weekly gas survey for <strong>{gasData.nextSurveyDate}</strong> is currently pending release. </>
+                )}
+                {gasData.isOilStale && (
+                  <>The WTI Crude Spot Price (last updated {gasData.oilAsOf}) is experiencing a slight delay at the source. </>
+                )}
+                Updates will be applied automatically as soon as data becomes available.
               </span>
             </div>
           </div>
@@ -202,6 +213,12 @@ export default function GasPrice() {
                   <span className="trend-text" style={{ color: getTrendIcon(gasData.trend).color }}>
                     {getTrendIcon(gasData.trend).text}
                   </span>
+                  {gasData.isOilStale && (
+                    <div className="pending-indicator mini">
+                      <span className="pulse-dot"></span>
+                      <span className="pending-text">DELAYED</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -475,11 +492,19 @@ export default function GasPrice() {
           }
         }
 
-        .pending-text {
-          color: #fbbf24;
-          font-size: 0.65rem;
-          font-weight: 800;
-          letter-spacing: 0.05em;
+        .pending-indicator.mini {
+          padding: 2px 6px;
+          margin-left: 6px;
+          background: rgba(251, 191, 36, 0.05);
+        }
+
+        .pending-indicator.mini .pulse-dot {
+          width: 6px;
+          height: 6px;
+        }
+
+        .pending-indicator.mini .pending-text {
+          font-size: 0.55rem;
         }
 
         .control-btn {

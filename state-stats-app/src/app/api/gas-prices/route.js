@@ -26,6 +26,13 @@ export async function GET() {
             cachedData.isStale = cachedData.nextSurveyDate <= today;
           }
           
+          // Recalculate isOilStale from cache
+          if (cachedData.oilAsOf) {
+            const oilDate = new Date(cachedData.oilAsOf);
+            const diffDays = (new Date() - oilDate) / (1000 * 60 * 60 * 24);
+            cachedData.isOilStale = diffDays > 3;
+          }
+          
           return NextResponse.json(cachedData);
         }
       }
@@ -115,6 +122,7 @@ export async function GET() {
               oilPrice,
               oilAsOf,
               isStale,
+              isOilStale: oilAsOf ? (new Date() - new Date(oilAsOf)) / (1000 * 60 * 60 * 24) > 3 : false,
               lastUpdated: new Date().toISOString()
             };
 
@@ -148,6 +156,13 @@ export async function GET() {
         const today = new Date().toISOString().split('T')[0];
         if (staleCachedData.nextSurveyDate) {
           staleCachedData.isStale = staleCachedData.nextSurveyDate <= today;
+        }
+
+        // Recalculate isOilStale for stale fallback
+        if (staleCachedData.oilAsOf) {
+          const oilDate = new Date(staleCachedData.oilAsOf);
+          const diffDays = (new Date() - oilDate) / (1000 * 60 * 60 * 24);
+          staleCachedData.isOilStale = diffDays > 3;
         }
         
         return NextResponse.json(staleCachedData);
