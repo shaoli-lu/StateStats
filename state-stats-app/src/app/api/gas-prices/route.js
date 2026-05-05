@@ -13,9 +13,19 @@ export async function GET() {
   try {
     if (fs.existsSync(CACHE_FILE)) {
       const stats = fs.statSync(CACHE_FILE);
+      // Only use cache if it's less than 1 hour old
       if (Date.now() - stats.mtimeMs < CACHE_TTL_MS) {
         const cachedData = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
-        if (cachedData && typeof cachedData.oilAsOf !== 'undefined') {
+        if (cachedData && typeof cachedData.prices !== 'undefined') {
+          // Add a flag to indicate how fresh this cache is
+          cachedData.cacheAgeMinutes = Math.round((Date.now() - stats.mtimeMs) / 60000);
+          
+          // Recalculate isStale even from cache
+          const today = new Date().toISOString().split('T')[0];
+          if (cachedData.nextSurveyDate) {
+            cachedData.isStale = cachedData.nextSurveyDate <= today;
+          }
+          
           return NextResponse.json(cachedData);
         }
       }
@@ -27,10 +37,14 @@ export async function GET() {
   // 2. Fetch fresh data if cache is expired or doesn't exist
   if (apiKey) {
     try {
-      // Use EIA API v2
-      const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[product][]=EPMR&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000`;
+      // Use EIA API v2 with cache busting query param
+      const cacheBuster = Math.floor(Date.now() / (1000 * 60 * 10)); // Change every 10 mins
+      const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[product][]=EPMR&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=5000&cb=${cacheBuster}`;
       
-      const res = await fetch(url, { next: { revalidate: 3600 } });
+      const res = await fetch(url, { 
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       
       if (res.ok) {
         const data = await res.json();
@@ -71,13 +85,15 @@ export async function GET() {
             let oilPrice = 0;
             let oilAsOf = '';
             try {
-              const oilUrl = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${apiKey}&frequency=weekly&data[0]=value&facets[series][]=RWTC&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=2`;
-              const oilRes = await fetch(oilUrl);
+              // Use daily frequency for WTI to get more recent data than weekly
+              const oilUrl = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${apiKey}&frequency=daily&data[0]=value&facets[series][]=RWTC&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=10`;
+              const oilRes = await fetch(oilUrl, { cache: 'no-store' });
               if (oilRes.ok) {
                 const oilData = await oilRes.json();
                 if (oilData?.response?.data?.length >= 2) {
                   const latestOil = parseFloat(oilData.response.data[0].value);
-                  const prevOil = parseFloat(oilData.response.data[1].value);
+                  // For trend, we still want to compare to something older, e.g. 5 days ago if daily
+                  const prevOil = parseFloat(oilData.response.data[5]?.value || oilData.response.data[1].value);
                   oilPrice = latestOil;
                   oilAsOf = oilData.response.data[0].period;
                   if (latestOil > prevOil) trend = 'up';
@@ -88,13 +104,18 @@ export async function GET() {
               console.error("Error fetching oil trend:", oilErr);
             }
 
+            const today = new Date().toISOString().split('T')[0];
+            const isStale = nextSurveyDate <= today;
+
             const responsePayload = {
               prices: formattedPrices,
               asOfDate,
               nextSurveyDate,
               trend,
               oilPrice,
-              oilAsOf
+              oilAsOf,
+              isStale,
+              lastUpdated: new Date().toISOString()
             };
 
             // Write to cache for future requests
@@ -122,6 +143,13 @@ export async function GET() {
       const staleCachedData = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8'));
       if (staleCachedData) {
         console.warn("Using stale cache for gas prices as fallback.");
+        
+        // Recalculate isStale even for stale fallback
+        const today = new Date().toISOString().split('T')[0];
+        if (staleCachedData.nextSurveyDate) {
+          staleCachedData.isStale = staleCachedData.nextSurveyDate <= today;
+        }
+        
         return NextResponse.json(staleCachedData);
       }
     }
@@ -171,6 +199,9 @@ export async function GET() {
     nextSurveyDate: nextMonday.toISOString().split('T')[0],
     trend: 'flat',
     oilPrice: (75 + Math.random() * 10).toFixed(2),
-    oilAsOf: lastMonday.toISOString().split('T')[0]
+    oilAsOf: lastMonday.toISOString().split('T')[0],
+    isStale: false,
+    lastUpdated: new Date().toISOString(),
+    isMock: true
   });
 }

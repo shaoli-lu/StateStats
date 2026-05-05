@@ -111,10 +111,16 @@ export default function GasPrice() {
     if (!dateStr) return '';
     const date = new Date(dateStr);
     const today = new Date();
-    const diffTime = Math.abs(today - date);
+    // Strip time for day comparison
+    const d1 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const d2 = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    const diffTime = d2 - d1;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
     if (diffDays === 0) return '(today)';
     if (diffDays === 1) return '(yesterday)';
+    if (diffDays < 0) return `(in ${Math.abs(diffDays)} days)`;
     return `(${diffDays} days ago)`;
   };
 
@@ -128,6 +134,23 @@ export default function GasPrice() {
 
   return (
     <div className="gas-price-container">
+      {/* Explanation Banner for Stale Data */}
+      {!loading && gasData.isStale && (
+        <div className="stale-banner">
+          <div className="stale-banner-content">
+            <span className="stale-icon">🔔</span>
+            <div className="stale-text-group">
+              <span className="stale-title">Update in Progress</span>
+              <span className="stale-description">
+                The EIA typically releases new weekly data on Monday afternoons. 
+                We are currently waiting for the <strong>{gasData.nextSurveyDate}</strong> release and will update automatically as soon as it's available.
+              </span>
+            </div>
+          </div>
+          <div className="stale-banner-pulse"></div>
+        </div>
+      )}
+
       {/* Banner */}
       <div className="gas-banner">
         <div className="banner-controls">
@@ -150,13 +173,21 @@ export default function GasPrice() {
 
           {!loading && gasData.asOfDate && (
             <div className="info-badges">
-              <div className="date-info">
+              <div className="date-info" title={gasData.lastUpdated ? `Last checked for updates: ${new Date(gasData.lastUpdated).toLocaleString()}` : ""}>
                 <span className="date-label">As of:</span>
                 <span className="date-value">{gasData.asOfDate}</span>
                 <span className="days-ago">{getDaysAgo(gasData.asOfDate)}</span>
                 <span className="date-separator">|</span>
                 <span className="date-label">Next Survey:</span>
-                <span className="date-value">{gasData.nextSurveyDate}</span>
+                <span className="date-value" style={{ color: gasData.isStale ? '#fbbf24' : 'inherit' }}>
+                  {gasData.nextSurveyDate}
+                </span>
+                {gasData.isStale && (
+                  <div className="pending-indicator">
+                    <span className="pulse-dot"></span>
+                    <span className="pending-text">UPDATE PENDING</span>
+                  </div>
+                )}
               </div>
 
               {gasData.oilPrice > 0 && (
@@ -196,6 +227,7 @@ export default function GasPrice() {
             </div>
           )}
         </div>
+
       </div>
 
       {/* Iframe */}
@@ -228,6 +260,70 @@ export default function GasPrice() {
 
         .gas-banner:hover {
           background: rgba(37, 99, 235, 0.25);
+        }
+
+        .stale-banner {
+          background: linear-gradient(90deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05));
+          border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+          padding: 12px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          position: relative;
+          overflow: hidden;
+          animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .stale-banner-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          z-index: 1;
+        }
+
+        .stale-icon {
+          font-size: 1.5rem;
+          filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
+        }
+
+        .stale-text-group {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .stale-title {
+          font-weight: 700;
+          color: #fbbf24;
+          font-size: 0.9rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .stale-description {
+          font-size: 0.8rem;
+          color: rgba(251, 191, 36, 0.9);
+          line-height: 1.4;
+        }
+
+        .stale-banner-pulse {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.05), transparent);
+          transform: translateX(-100%);
+          animation: sweep 3s infinite;
+        }
+
+        @keyframes sweep {
+          100% { transform: translateX(100%); }
+        }
+
+        @keyframes slideDown {
+          from { transform: translateY(-100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
 
         .banner-controls {
@@ -339,6 +435,51 @@ export default function GasPrice() {
         .date-separator {
           opacity: 0.3;
           margin: 0 4px;
+        }
+
+        .pending-indicator {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(251, 191, 36, 0.1);
+          padding: 4px 10px;
+          border-radius: 6px;
+          border: 1px solid rgba(251, 191, 36, 0.2);
+          margin-left: 8px;
+        }
+
+        .pulse-dot {
+          width: 8px;
+          height: 8px;
+          background-color: #fbbf24;
+          border-radius: 50%;
+          position: relative;
+        }
+
+        .pulse-dot::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: #fbbf24;
+          border-radius: 50%;
+          animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+          75%, 100% {
+            transform: scale(2.5);
+            opacity: 0;
+          }
+        }
+
+        .pending-text {
+          color: #fbbf24;
+          font-size: 0.65rem;
+          font-weight: 800;
+          letter-spacing: 0.05em;
         }
 
         .control-btn {
