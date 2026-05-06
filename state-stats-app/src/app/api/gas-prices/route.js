@@ -26,12 +26,6 @@ export async function GET() {
             cachedData.isStale = cachedData.nextSurveyDate <= today;
           }
           
-          // Recalculate isOilStale from cache
-          if (cachedData.oilAsOf) {
-            const oilDate = new Date(cachedData.oilAsOf);
-            const diffDays = (new Date() - oilDate) / (1000 * 60 * 60 * 24);
-            cachedData.isOilStale = diffDays > 3;
-          }
           
           return NextResponse.json(cachedData);
         }
@@ -87,29 +81,6 @@ export async function GET() {
               console.error("Error calculating next survey date", e);
             }
 
-            // Fetch crude oil trend (WTI Spot Price)
-            let trend = 'flat';
-            let oilPrice = 0;
-            let oilAsOf = '';
-            try {
-              // Use daily frequency for WTI to get more recent data than weekly
-              const oilUrl = `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${apiKey}&frequency=daily&data[0]=value&facets[series][]=RWTC&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=10`;
-              const oilRes = await fetch(oilUrl, { cache: 'no-store' });
-              if (oilRes.ok) {
-                const oilData = await oilRes.json();
-                if (oilData?.response?.data?.length >= 2) {
-                  const latestOil = parseFloat(oilData.response.data[0].value);
-                  // For trend, we still want to compare to something older, e.g. 5 days ago if daily
-                  const prevOil = parseFloat(oilData.response.data[5]?.value || oilData.response.data[1].value);
-                  oilPrice = latestOil;
-                  oilAsOf = oilData.response.data[0].period;
-                  if (latestOil > prevOil) trend = 'up';
-                  else if (latestOil < prevOil) trend = 'down';
-                }
-              }
-            } catch (oilErr) {
-              console.error("Error fetching oil trend:", oilErr);
-            }
 
             const today = new Date().toISOString().split('T')[0];
             const isStale = nextSurveyDate <= today;
@@ -118,11 +89,7 @@ export async function GET() {
               prices: formattedPrices,
               asOfDate,
               nextSurveyDate,
-              trend,
-              oilPrice,
-              oilAsOf,
               isStale,
-              isOilStale: oilAsOf ? (new Date() - new Date(oilAsOf)) / (1000 * 60 * 60 * 24) > 3 : false,
               lastUpdated: new Date().toISOString()
             };
 
@@ -158,12 +125,6 @@ export async function GET() {
           staleCachedData.isStale = staleCachedData.nextSurveyDate <= today;
         }
 
-        // Recalculate isOilStale for stale fallback
-        if (staleCachedData.oilAsOf) {
-          const oilDate = new Date(staleCachedData.oilAsOf);
-          const diffDays = (new Date() - oilDate) / (1000 * 60 * 60 * 24);
-          staleCachedData.isOilStale = diffDays > 3;
-        }
         
         return NextResponse.json(staleCachedData);
       }
@@ -212,9 +173,6 @@ export async function GET() {
     prices: updatedPrices,
     asOfDate: lastMonday.toISOString().split('T')[0],
     nextSurveyDate: nextMonday.toISOString().split('T')[0],
-    trend: 'flat',
-    oilPrice: (75 + Math.random() * 10).toFixed(2),
-    oilAsOf: lastMonday.toISOString().split('T')[0],
     isStale: false,
     lastUpdated: new Date().toISOString(),
     isMock: true

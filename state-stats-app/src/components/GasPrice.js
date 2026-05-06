@@ -124,36 +124,18 @@ export default function GasPrice() {
     return `(${diffDays} days ago)`;
   };
 
-  const getTrendIcon = (trend) => {
-    switch (trend) {
-      case 'up': return { icon: '📈', text: 'Trending Up', color: '#ef4444' }; // Red because up is bad for gas prices
-      case 'down': return { icon: '📉', text: 'Trending Down', color: '#10b981' }; // Green because down is good
-      default: return { icon: '⚖️', text: 'Market Steady', color: '#94a3b8' };
-    }
-  };
 
   return (
     <div className="gas-price-container">
       {/* Explanation Banner for Stale Data */}
-      {!loading && (gasData.isStale || gasData.isOilStale) && (
+      {!loading && gasData.isStale && (
         <div className="stale-banner">
           <div className="stale-banner-content">
             <span className="stale-icon">🔔</span>
             <div className="stale-text-group">
-              <span className="stale-title">
-                {gasData.isStale && gasData.isOilStale 
-                  ? 'Market Data Updates in Progress' 
-                  : gasData.isStale 
-                    ? 'Gas Price Update Pending' 
-                    : 'WTI Crude Price Delayed'}
-              </span>
+              <span className="stale-title">Gas Price Update Pending</span>
               <span className="stale-description">
-                {gasData.isStale && (
-                  <>The EIA weekly gas survey for <strong>{gasData.nextSurveyDate}</strong> is currently pending release. </>
-                )}
-                {gasData.isOilStale && (
-                  <>The WTI Crude Spot Price (last updated {gasData.oilAsOf}) is experiencing a slight delay at the source. </>
-                )}
+                The EIA weekly gas survey for <strong>{gasData.nextSurveyDate}</strong> is currently pending release.
                 Updates will be applied automatically as soon as data becomes available.
               </span>
             </div>
@@ -201,26 +183,6 @@ export default function GasPrice() {
                 )}
               </div>
 
-              {gasData.oilPrice > 0 && (
-                <div 
-                  className="trend-info" 
-                  title={`West Texas Intermediate (WTI) Crude Spot Price: $${gasData.oilPrice}/barrel. \nUpdated: ${gasData.oilAsOf}. \nTrend is determined by comparing the current week to the previous week's price from EIA official data.`}
-                >
-                  <span className="oil-label">WTI (West Texas Intermediate Crude):</span>
-                  <span className="oil-price-value">${gasData.oilPrice}/barrel</span>
-                  <span className="oil-as-of">Updated {getDaysAgo(gasData.oilAsOf)}</span>
-                  <span className="trend-icon">{getTrendIcon(gasData.trend).icon}</span>
-                  <span className="trend-text" style={{ color: getTrendIcon(gasData.trend).color }}>
-                    {getTrendIcon(gasData.trend).text}
-                  </span>
-                  {gasData.isOilStale && (
-                    <div className="pending-indicator mini">
-                      <span className="pulse-dot"></span>
-                      <span className="pending-text">DELAYED</span>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -247,13 +209,28 @@ export default function GasPrice() {
 
       </div>
 
-      {/* Iframe */}
-      <div className="iframe-wrapper">
-        <iframe
-          src="https://www.eia.gov/petroleum/gasdiesel/gas_geographies.php#pricesbyregion"
-          className="gas-iframe"
-          title="Government Gas by Region"
-        />
+      {/* Iframes Container */}
+      <div className="iframes-container">
+        <div className="iframe-wrapper">
+          <div className="iframe-header">
+            <h3>Weekly Gas Prices (EIA)</h3>
+          </div>
+          <iframe
+            src="https://www.eia.gov/petroleum/gasdiesel/gas_geographies.php#pricesbyregion"
+            className="gas-iframe"
+            title="Government Gas by Region"
+          />
+        </div>
+        <div className="iframe-wrapper">
+          <div className="iframe-header">
+            <h3>WTI Crude Oil Prices (TradingView)</h3>
+          </div>
+          <iframe
+            src="https://s.tradingview.com/widgetembed/?symbol=TVC:USOIL&theme=light&timezone=America/Chicago"
+            className="gas-iframe"
+            title="WTI Crude Oil Prices (TradingView)"
+          />
+        </div>
       </div>
 
       <style jsx>{`
@@ -383,59 +360,6 @@ export default function GasPrice() {
           margin-left: 2px;
         }
 
-        .trend-info {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(15, 23, 42, 0.6);
-          padding: 6px 14px;
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          font-size: 0.75rem;
-          cursor: default;
-          transition: all 0.2s;
-        }
-
-        .trend-info:hover {
-          background: rgba(15, 23, 42, 0.8);
-          border-color: rgba(255, 255, 255, 0.1);
-          transform: translateY(-1px);
-        }
-
-        .trend-icon {
-          font-size: 0.9rem;
-        }
-
-        .oil-label {
-          opacity: 0.7;
-          margin-right: 4px;
-        }
-
-        .oil-price-value {
-          font-weight: 700;
-          color: var(--text-primary);
-          margin-right: 8px;
-        }
-
-        .oil-as-of {
-          font-size: 0.7rem;
-          opacity: 0.6;
-          margin-right: 8px;
-          white-space: nowrap;
-        }
-
-        .oil-as-of::after {
-          content: "•";
-          margin-left: 8px;
-          opacity: 0.3;
-        }
-
-        .trend-text {
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-          font-size: 0.75rem;
-        }
 
         .date-label {
           font-weight: 400;
@@ -571,22 +495,55 @@ export default function GasPrice() {
           text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
+        .iframes-container {
+          display: flex;
+          flex: 1;
+          gap: 16px;
+          padding: 16px;
+          min-height: 700px;
+          background: rgba(15, 23, 42, 0.2);
+        }
+
         .iframe-wrapper {
           flex: 1;
-          position: relative;
-          width: 100%;
-          min-height: 60vh;
+          display: flex;
+          flex-direction: column;
+          background: rgba(15, 23, 42, 0.4);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
           overflow: hidden;
-          -webkit-overflow-scrolling: touch;
+        }
+
+        .iframe-header {
+          padding: 12px 16px;
+          background: rgba(30, 41, 59, 0.5);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .iframe-header h3 {
+          margin: 0;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .gas-iframe {
+          flex: 1;
           width: 100%;
-          height: 100%;
           border: none;
-          position: absolute;
-          top: 0;
-          left: 0;
+          background: white;
+        }
+
+        @media (max-width: 1024px) {
+          .iframes-container {
+            flex-direction: column;
+            min-height: 1200px;
+          }
+          .iframe-wrapper {
+            min-height: 600px;
+          }
         }
 
         @media (max-width: 768px) {
@@ -601,15 +558,12 @@ export default function GasPrice() {
             gap: 10px;
             width: 100%;
           }
-          .date-info, .trend-info {
+          .date-info {
             width: 100%;
             justify-content: center;
             padding: 8px 16px;
             flex-wrap: wrap;
             text-align: center;
-          }
-          .oil-price-value {
-            font-size: 0.75rem;
           }
           .gas-city {
             font-size: 1rem;
@@ -619,9 +573,6 @@ export default function GasPrice() {
           }
           .gas-item {
             padding: 0 20px;
-          }
-          .iframe-wrapper {
-            min-height: 70vh;
           }
         }
       `}</style>
